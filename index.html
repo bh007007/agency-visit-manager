@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agency Visit Manager</title>
+<style>
+  .sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .sync-ok   { background: rgba(34,197,94,0.2); color: #bbf7d0; }
+  .sync-load { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); }
+  .sync-err  { background: rgba(239,68,68,0.2); color: #fecaca; }
+  .sync-dot  { width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .setup-banner {
+    background: #fef9c3;
+    border: 1px solid #fde047;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .setup-banner strong { color: #854d0e; }
+  .setup-banner code {
+    background: #fef3c7;
+    border: 1px solid #fde047;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: monospace;
+  }
+  .setup-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .setup-input-row input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #fde047;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background: white;
+  }
+  .setup-input-row input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.15); }
+  .btn-setup { background: #f59e0b; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .btn-setup:hover { background: #d97706; }
+  .overlay-loading {
+    position: fixed; inset: 0; background: rgba(255,255,255,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 300; backdrop-filter: blur(2px);
+  }
+  .overlay-loading.hidden { display: none; }
+  .loading-box {
+    background: white; border-radius: 16px; padding: 32px 40px;
+    text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+  .loading-box .big-spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 12px;
+  }
+  .loading-box p { color: #64748b; font-size: 14px; }
+</style>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary: #f8fafc;
+    --accent: #0ea5e9;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --card-bg: #ffffff;
+    --bg: #f1f5f9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--primary);
+    color: white;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  .header-date { font-size: 12px; opacity: 0.8; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .tab {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.3);
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .stat-card .num {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1;
+  }
+
+  .stat-card .label {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-bar input, .filter-bar select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--card-bg);
+    color: var(--text);
+    outline: none;
+  }
+
+  .filter-bar input:focus, .filter-bar select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+
+  .filter-bar input { flex: 1; min-width: 160px; }
+
+  .visits-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .visit-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+
+  .visit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+
+  .card-header-left { flex: 1; }
+  .guest-name { font-size: 18px; font-weight: 700; color: var(--text); }
+  .agency-name { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .country-flag { font-size: 28px; line-height: 1; }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .badge-campus { background: #eff6ff; color: #2563eb; }
+  .badge-gender-m { background: #f0f9ff; color: #0284c7; }
+  .badge-gender-f { background: #fdf4ff; color: #a21caf; }
+  .badge-pickup { background: #fef3c7; color: #92400e; }
+  .badge-stay { background: #f0fdf4; color: #166534; }
+  .badge-recording { background: #fce7f3; color: #9d174d; }
+
+  .info-rows { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+  .info-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+  }
+
+  .info-row .icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  .schedule-list { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+
+  .schedule-item {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .schedule-item .s-date { font-weight: 700; color: var(--primary); white-space: nowrap; }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-danger { background: #fef2f2; color: var(--danger); }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-outline { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-outline:hover { background: var(--bg); }
+
+  .btn-add {
+    background: var(--primary);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+    transition: all 0.15s;
+  }
+
+  .btn-add:hover { background: var(--primary-dark); transform: translateY(-1px); }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(2px);
+  }
+
+  .modal-overlay.hidden { display: none; }
+
+  .modal {
+    background: var(--card-bg);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-header h2 { font-size: 18px; font-weight: 700; }
+
+  .modal-close {
+    background: var(--bg);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+  }
+
+  .modal-body { padding: 20px 24px 24px; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+
+  .form-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--card-bg);
+    outline: none;
+    transition: border-color 0.15s;
+    font-family: inherit;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+
+  .form-group textarea { resize: vertical; min-height: 80px; }
+
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: all 0.15s;
+  }
+
+  .checkbox-label:hover { border-color: var(--primary); background: #eff6ff; }
+  .checkbox-label input { accent-color: var(--primary); }
+
+  .schedule-builder { display: flex; flex-direction: column; gap: 8px; }
+
+  .schedule-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .schedule-row input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+  }
+
+  .schedule-row input:focus { border-color: var(--primary); }
+
+  .btn-remove-schedule {
+    background: #fef2f2;
+    color: var(--danger);
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .btn-add-schedule {
+    background: transparent;
+    color: var(--primary);
+    border: 1px dashed var(--primary);
+    border-radius: 8px;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    transition: all 0.15s;
+  }
+
+  .btn-add-schedule:hover { background: #eff6ff; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  .calendar-view {
+    background: var(--card-bg);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .cal-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .cal-nav h2 { font-size: 18px; font-weight: 700; }
+
+  .cal-nav-btn {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .cal-nav-btn:hover { background: var(--border); }
+
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .cal-day-header {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    padding: 8px 4px;
+    text-transform: uppercase;
+  }
+
+  .cal-day {
+    min-height: 80px;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .cal-day:hover { background: #e2e8f0; }
+  .cal-day.other-month { opacity: 0.35; }
+  .cal-day.today { background: #eff6ff; outline: 2px solid var(--primary); }
+
+  .cal-day-num {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .cal-day.today .cal-day-num { color: var(--primary); }
+
+  .cal-event {
+    font-size: 10px;
+    background: var(--primary);
+    color: white;
+    border-radius: 4px;
+    padding: 2px 5px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .cal-event.pickup { background: var(--warning); }
+  .cal-event.schedule { background: var(--success); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+  .empty-state p { font-size: 14px; }
+
+  .urgent-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 4px;
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    margin-top: 6px;
+  }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  @media (max-width: 640px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid .full { grid-column: 1; }
+    .visits-grid { grid-template-columns: 1fr; }
+    .cal-day { min-height: 56px; }
+    .cal-event { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✈️ Agency Visit Manager</h1>
+  <div class="header-actions">
+    <span class="header-date" id="headerDate"></span>
+    <span class="sync-badge sync-load" id="syncBadge"><span class="spinner"></span> Connecting...</span>
+    <button class="btn-add" onclick="openModal()">+ New Visit</button>
+  </div>
+</header>
+
+<div class="container">
+  <!-- Setup Banner (hidden after API URL is saved) -->
+  <div class="setup-banner" id="setupBanner">
+    <strong>⚙️ First-time Setup:</strong> Paste your Google Apps Script Web App URL below to connect to the shared database.
+    <div class="setup-input-row">
+      <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec">
+      <button class="btn-setup" onclick="saveApiUrl()">Connect</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('list')">📋 List</button>
+    <button class="tab" onclick="switchTab('calendar')">📅 Calendar</button>
+  </div>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="num" id="statTotal">0</div>
+      <div class="label">Total Visits</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statUpcoming">0</div>
+      <div class="label">Upcoming</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statPickup">0</div>
+      <div class="label">Pickup Required</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statThisMonth">0</div>
+      <div class="label">This Month</div>
+    </div>
+  </div>
+
+  <!-- List View -->
+  <div id="listView">
+    <div class="filter-bar">
+      <input type="text" id="searchInput" placeholder="🔍 Search by name, agency, country..." oninput="renderCards()">
+      <select id="filterCampus" onchange="renderCards()">
+        <option value="">All Campuses</option>
+        <option value="premium">Premium</option>
+        <option value="challenger">Challenger</option>
+        <option value="jic">JIC</option>
+      </select>
+      <select id="filterCountry" onchange="renderCards()">
+        <option value="">All Countries</option>
+      </select>
+      <select id="filterPickup" onchange="renderCards()">
+        <option value="">All</option>
+        <option value="yes">Pickup Required</option>
+        <option value="no">No Pickup</option>
+      </select>
+    </div>
+    <div class="visits-grid" id="visitsGrid"></div>
+  </div>
+
+  <!-- Calendar View -->
+  <div id="calendarView" style="display:none">
+    <div class="calendar-view">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="prevMonth()">‹ Prev</button>
+        <h2 id="calMonthLabel"></h2>
+        <button class="cal-nav-btn" onclick="nextMonth()">Next ›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="overlay-loading hidden" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="big-spinner"></div>
+    <p id="loadingMsg">Syncing with Google Sheets...</p>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay hidden" id="modalOverlay" onclick="handleOverlayClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">New Visit</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="visitForm" onsubmit="saveVisit(event)">
+        <input type="hidden" id="editId">
+
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Agency / Group Name</label>
+            <input type="text" id="fAgency" placeholder="e.g. studyhere, PECA group" required>
+          </div>
+
+          <div class="form-group">
+            <label>Country Code</label>
+            <input type="text" id="fCountry" placeholder="e.g. TWN, KOR, JPN" maxlength="5" style="text-transform:uppercase">
+          </div>
+
+          <div class="form-group">
+            <label>Gender / Pax</label>
+            <input type="text" id="fGender" placeholder="e.g. M *1, F *2, Mixed *3">
+          </div>
+
+          <div class="form-group full">
+            <label>Guest Name</label>
+            <input type="text" id="fName" placeholder="Enter guest name" required>
+          </div>
+
+          <div class="form-group">
+            <label>Arrival Date</label>
+            <input type="date" id="fDateStart" required>
+          </div>
+
+          <div class="form-group">
+            <label>Departure Date</label>
+            <input type="date" id="fDateEnd">
+          </div>
+        </div>
+
+        <hr class="divider">
+        <p class="section-title">Campus</p>
+        <div class="checkbox-group">
+          <label class="checkbox-label"><input type="checkbox" id="fCampusPremium"> 🏫 Premium</label>
+          <label class="checkbox-label"><input type="checkbox" id="fCampusChallenger"> 🏆 Challenger</label>
+          <label class="checkbox-label"><input type="checkbox" id="fCampusJIC"> 🎓 JIC</label>
+        </div>
+
+        <hr class="divider">
+        <p class="section-title">Special Requirements</p>
+        <div class="checkbox-group">
+          <label class="checkbox-label"><input type="checkbox" id="fPickup"> 🚗 Pickup Required</label>
+          <label class="checkbox-label"><input type="checkbox" id="fStay"> 🏨 Accommodation</label>
+          <label class="checkbox-label"><input type="checkbox" id="fRecording"> 🎥 Video Recording</label>
+        </div>
+
+        <div class="form-group" style="margin-top:12px">
+          <label>Pickup / Stay Notes</label>
+          <input type="text" id="fStayNote" placeholder="e.g. Stay in JIC a week, Airport pickup 14:00">
+        </div>
+
+        <hr class="divider">
+        <p class="section-title">Visit Schedule</p>
+        <div class="schedule-builder" id="scheduleBuilder"></div>
+        <button type="button" class="btn-add-schedule" onclick="addScheduleRow()">+ Add Schedule Item</button>
+
+        <hr class="divider">
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="fNotes" placeholder="Any additional notes..."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────
+const API_KEY = 'agencyVisit_apiUrl';
+let API_URL = localStorage.getItem(API_KEY) || '';
+
+let visits = [];
+let editingId = null;
+let currentTab = 'list';
+let calYear, calMonth;
+
+const COUNTRY_FLAGS = {
+  TWN:'🇹🇼', KOR:'🇰🇷', JPN:'🇯🇵', VNM:'🇻🇳', CHN:'🇨🇳',
+  USA:'🇺🇸', THA:'🇹🇭', PHL:'🇵🇭', IDN:'🇮🇩', MYS:'🇲🇾',
+  SGP:'🇸🇬', HKG:'🇭🇰', AUS:'🇦🇺', BRA:'🇧🇷', MEX:'🇲🇽',
+  RUS:'🇷🇺', DEU:'🇩🇪', FRA:'🇫🇷', GBR:'🇬🇧', ITA:'🇮🇹',
+};
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function apiGet(params) {
+  const url = new URL(API_URL);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error('Network error: ' + res.status);
+  return res.json();
+}
+
+async function fetchAllVisits() {
+  const data = await apiGet({ action: 'getAll' });
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+async function apiSave(visit) {
+  return apiGet({ action: 'save', data: encodeURIComponent(JSON.stringify(visit)) });
+}
+
+async function apiDelete(id) {
+  return apiGet({ action: 'delete', id });
+}
+
+// ── Sync status badge ─────────────────────────────────────────
+function setSyncStatus(state, text) {
+  const badge = document.getElementById('syncBadge');
+  badge.className = 'sync-badge ' + {
+    loading: 'sync-load',
+    ok:      'sync-ok',
+    error:   'sync-err',
+  }[state];
+  badge.innerHTML = state === 'loading'
+    ? `<span class="spinner"></span> ${text}`
+    : `<span class="sync-dot"></span> ${text}`;
+}
+
+// ── Loading overlay ───────────────────────────────────────────
+function showLoading(msg) {
+  document.getElementById('loadingMsg').textContent = msg || 'Syncing...';
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+
+// ── Setup banner ──────────────────────────────────────────────
+function saveApiUrl() {
+  const val = document.getElementById('apiUrlInput').value.trim();
+  if (!val.startsWith('https://')) return alert('Please enter a valid URL starting with https://');
+  API_URL = val;
+  localStorage.setItem(API_KEY, API_URL);
+  document.getElementById('setupBanner').style.display = 'none';
+  initApp();
+}
+
+function checkSetup() {
+  const banner = document.getElementById('setupBanner');
+  if (API_URL) {
+    banner.style.display = 'none';
+  } else {
+    banner.style.display = '';
+    document.getElementById('apiUrlInput').value = '';
+    setSyncStatus('error', 'Not connected');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+  document.getElementById('headerDate').textContent =
+    now.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  checkSetup();
+  if (API_URL) initApp();
+  addScheduleRow();
+});
+
+async function initApp() {
+  setSyncStatus('loading', 'Loading...');
+  showLoading('Loading visits from Google Sheets...');
+  try {
+    visits = await fetchAllVisits();
+    setSyncStatus('ok', 'Synced');
+  } catch (err) {
+    setSyncStatus('error', 'Connection failed');
+    alert('Could not connect to Google Sheets.\n\nCheck your API URL in the setup banner.\n\nError: ' + err.message);
+    visits = [];
+  } finally {
+    hideLoading();
+  }
+  updateStats();
+  renderCards();
+  renderCalendar();
+  populateCountryFilter();
+}
+
+function updateStats() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const upcoming = visits.filter(v => v.dateStart && new Date(v.dateStart) >= today);
+  const pickup = visits.filter(v => v.pickup);
+  const thisMonthV = visits.filter(v => {
+    if (!v.dateStart) return false;
+    const d = new Date(v.dateStart);
+    return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+  });
+  document.getElementById('statTotal').textContent = visits.length;
+  document.getElementById('statUpcoming').textContent = upcoming.length;
+  document.getElementById('statPickup').textContent = pickup.length;
+  document.getElementById('statThisMonth').textContent = thisMonthV.length;
+}
+
+function populateCountryFilter() {
+  const sel = document.getElementById('filterCountry');
+  while (sel.options.length > 1) sel.remove(1);
+  const countries = [...new Set(visits.map(v => v.country).filter(Boolean))].sort();
+  countries.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = (COUNTRY_FLAGS[c] || '') + ' ' + c;
+    sel.appendChild(opt);
+  });
+}
+
+function getFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const campus = document.getElementById('filterCampus').value.toLowerCase();
+  const country = document.getElementById('filterCountry').value;
+  const pickup = document.getElementById('filterPickup').value;
+
+  return visits.filter(v => {
+    if (q && !`${v.name} ${v.agency} ${v.country}`.toLowerCase().includes(q)) return false;
+    if (campus && !(v.campuses || []).some(c => c.toLowerCase().includes(campus))) return false;
+    if (country && v.country !== country) return false;
+    if (pickup === 'yes' && !v.pickup) return false;
+    if (pickup === 'no' && v.pickup) return false;
+    return true;
+  }).sort((a, b) => (a.dateStart || '') < (b.dateStart || '') ? -1 : 1);
+}
+
+function renderCards() {
+  const grid = document.getElementById('visitsGrid');
+  const filtered = getFiltered();
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="icon">📭</div>
+        <h3>No visits found</h3>
+        <p>Register a new visit or adjust your search filters.</p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(v => buildCard(v)).join('');
+}
+
+function buildCard(v) {
+  const flag = COUNTRY_FLAGS[v.country] || '🌐';
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = v.dateStart ? new Date(v.dateStart + 'T00:00:00') : null;
+  const end = v.dateEnd ? new Date(v.dateEnd + 'T00:00:00') : null;
+  const isActive = start && end && today >= start && today <= end;
+  const isUpcoming = start && start > today;
+  const isPast = end && end < today;
+
+  const dateStr = v.dateStart
+    ? `${fmtDate(v.dateStart)}${v.dateEnd ? ' – ' + fmtDate(v.dateEnd) : ''}`
+    : 'Date TBD';
+
+  const campusBadges = (v.campuses || []).map(c =>
+    `<span class="badge badge-campus">${c}</span>`
+  ).join('');
+
+  const genderClass = (v.gender || '').toLowerCase().startsWith('f') ? 'badge-gender-f' : 'badge-gender-m';
+
+  const scheduleHtml = (v.schedules || []).length > 0
+    ? `<div class="section-title" style="margin-top:10px">Schedule</div>
+       <div class="schedule-list">${
+         v.schedules.map(s =>
+           `<div class="schedule-item">
+              <span class="s-date">${fmtShort(s.date)} ${s.time || ''}</span>
+              <span>${escHtml(s.info)}</span>
+            </div>`
+         ).join('')
+       }</div>`
+    : '';
+
+  const statusHtml = isActive
+    ? `<strong style="color:var(--success)"> ● In Progress</strong>`
+    : isUpcoming
+    ? `<span style="color:var(--primary)"> D-${daysDiff(today, start)}</span>`
+    : isPast
+    ? `<span style="color:var(--text-muted)"> Completed</span>`
+    : '';
+
+  return `
+  <div class="visit-card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="guest-name">${isActive ? '<span class="urgent-dot"></span>' : ''}${escHtml(v.name)}</div>
+        <div class="agency-name">${escHtml(v.agency)}</div>
+      </div>
+      <div class="country-flag" title="${v.country}">${flag}</div>
+    </div>
+
+    <div class="badges">
+      ${v.gender ? `<span class="badge ${genderClass}">${escHtml(v.gender)}</span>` : ''}
+      ${campusBadges}
+      ${v.pickup ? '<span class="badge badge-pickup">🚗 Pickup</span>' : ''}
+      ${v.stay ? '<span class="badge badge-stay">🏨 Stay</span>' : ''}
+      ${v.recording ? '<span class="badge badge-recording">🎥 Recording</span>' : ''}
+    </div>
+
+    <div class="info-rows">
+      <div class="info-row">
+        <span class="icon">📅</span>
+        <span>${dateStr}${statusHtml}</span>
+      </div>
+      ${v.stayNote ? `<div class="info-row"><span class="icon">📌</span><span>${escHtml(v.stayNote)}</span></div>` : ''}
+      ${v.notes ? `<div class="info-row"><span class="icon">💬</span><span>${escHtml(v.notes)}</span></div>` : ''}
+    </div>
+
+    ${scheduleHtml}
+
+    <div class="card-actions">
+      <button class="btn btn-primary" onclick="openModal('${v.id}')">✏️ Edit</button>
+      <button class="btn btn-danger" onclick="deleteVisit('${v.id}')">Delete</button>
+    </div>
+  </div>`;
+}
+
+function renderCalendar() {
+  const label = document.getElementById('calMonthLabel');
+  const grid = document.getElementById('calGrid');
+  const d = new Date(calYear, calMonth, 1);
+  label.textContent = d.toLocaleDateString('en-US', { year:'numeric', month:'long' });
+
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = days.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const lastDate = new Date(calYear, calMonth + 1, 0).getDate();
+  const prevLast = new Date(calYear, calMonth, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  for (let i = 0; i < firstDay; i++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${prevLast - firstDay + i + 1}</div></div>`;
+  }
+
+  for (let day = 1; day <= lastDate; day++) {
+    const date = new Date(calYear, calMonth, day); date.setHours(0,0,0,0);
+    const dateStr = toDateStr(date);
+    const isToday = date.getTime() === today.getTime();
+
+    const stayVisits = visits.filter(v => {
+      if (!v.dateStart) return false;
+      const s = new Date(v.dateStart + 'T00:00:00');
+      const e = v.dateEnd ? new Date(v.dateEnd + 'T00:00:00') : s;
+      return date >= s && date <= e;
+    });
+
+    const schedVisits = visits.filter(v =>
+      (v.schedules || []).some(s => s.date === dateStr)
+    );
+
+    let eventsHtml = '';
+    stayVisits.slice(0,2).forEach(v => {
+      eventsHtml += `<div class="cal-event${v.pickup?' pickup':''}" onclick="openModal('${v.id}')" title="${v.name}">${escHtml(v.name)}</div>`;
+    });
+    schedVisits.slice(0,1).forEach(v => {
+      const s = v.schedules.find(s => s.date === dateStr);
+      if (s) eventsHtml += `<div class="cal-event schedule" onclick="openModal('${v.id}')" title="${s.info}">${s.time || ''} ${escHtml(v.name)}</div>`;
+    });
+
+    html += `<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${day}</div>${eventsHtml}</div>`;
+  }
+
+  const rem = (7 - (firstDay + lastDate) % 7) % 7;
+  for (let i = 1; i <= rem; i++) {
+    html += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function prevMonth() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+function nextMonth() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab:nth-child(${tab === 'list' ? 1 : 2})`).classList.add('active');
+  document.getElementById('listView').style.display = tab === 'list' ? '' : 'none';
+  document.getElementById('calendarView').style.display = tab === 'calendar' ? '' : 'none';
+  if (tab === 'calendar') renderCalendar();
+}
+
+function openModal(id) {
+  editingId = id || null;
+  document.getElementById('modalTitle').textContent = id ? 'Edit Visit' : 'New Visit';
+  document.getElementById('visitForm').reset();
+  document.getElementById('editId').value = id || '';
+  document.getElementById('scheduleBuilder').innerHTML = '';
+
+  if (id) {
+    const v = visits.find(x => x.id === id);
+    if (!v) return;
+    document.getElementById('fAgency').value = v.agency || '';
+    document.getElementById('fCountry').value = v.country || '';
+    document.getElementById('fGender').value = v.gender || '';
+    document.getElementById('fName').value = v.name || '';
+    document.getElementById('fDateStart').value = v.dateStart || '';
+    document.getElementById('fDateEnd').value = v.dateEnd || '';
+    document.getElementById('fCampusPremium').checked = (v.campuses||[]).includes('Premium');
+    document.getElementById('fCampusChallenger').checked = (v.campuses||[]).includes('Challenger');
+    document.getElementById('fCampusJIC').checked = (v.campuses||[]).includes('JIC');
+    document.getElementById('fPickup').checked = !!v.pickup;
+    document.getElementById('fStay').checked = !!v.stay;
+    document.getElementById('fRecording').checked = !!v.recording;
+    document.getElementById('fStayNote').value = v.stayNote || '';
+    document.getElementById('fNotes').value = v.notes || '';
+    (v.schedules || []).forEach(s => addScheduleRow(s));
+    if ((v.schedules || []).length === 0) addScheduleRow();
+  } else {
+    addScheduleRow();
+  }
+
+  document.getElementById('modalOverlay').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.add('hidden');
+  document.body.style.overflow = '';
+  editingId = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
+
+function addScheduleRow(data) {
+  const builder = document.getElementById('scheduleBuilder');
+  const row = document.createElement('div');
+  row.className = 'schedule-row';
+  row.innerHTML = `
+    <input type="date" class="s-date" value="${data?.date || ''}">
+    <input type="time" class="s-time" value="${data?.time || ''}">
+    <input type="text" class="s-info" placeholder="e.g. JIC Premium orientation" value="${escAttr(data?.info || '')}">
+    <button type="button" class="btn-remove-schedule" onclick="this.parentElement.remove()">−</button>
+  `;
+  builder.appendChild(row);
+}
+
+async function saveVisit(e) {
+  e.preventDefault();
+
+  const campuses = [];
+  if (document.getElementById('fCampusPremium').checked) campuses.push('Premium');
+  if (document.getElementById('fCampusChallenger').checked) campuses.push('Challenger');
+  if (document.getElementById('fCampusJIC').checked) campuses.push('JIC');
+
+  const schedules = [];
+  document.querySelectorAll('#scheduleBuilder .schedule-row').forEach(row => {
+    const date = row.querySelector('.s-date').value;
+    const time = row.querySelector('.s-time').value;
+    const info = row.querySelector('.s-info').value.trim();
+    if (date || info) schedules.push({ date, time, info });
+  });
+
+  const data = {
+    id: editingId || genId(),
+    agency: document.getElementById('fAgency').value.trim(),
+    country: document.getElementById('fCountry').value.trim().toUpperCase(),
+    gender: document.getElementById('fGender').value.trim(),
+    name: document.getElementById('fName').value.trim(),
+    dateStart: document.getElementById('fDateStart').value,
+    dateEnd: document.getElementById('fDateEnd').value,
+    campuses,
+    pickup: document.getElementById('fPickup').checked,
+    stay: document.getElementById('fStay').checked,
+    recording: document.getElementById('fRecording').checked,
+    stayNote: document.getElementById('fStayNote').value.trim(),
+    schedules,
+    notes: document.getElementById('fNotes').value.trim(),
+    createdAt: editingId
+      ? (visits.find(v => v.id === editingId)?.createdAt || new Date().toISOString())
+      : new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  closeModal();
+  setSyncStatus('loading', 'Saving...');
+  showLoading('Saving to Google Sheets...');
+
+  try {
+    await apiSave(data);
+    if (editingId) {
+      const idx = visits.findIndex(v => v.id === editingId);
+      if (idx !== -1) visits[idx] = data;
+    } else {
+      visits.push(data);
+    }
+    setSyncStatus('ok', 'Saved');
+  } catch (err) {
+    setSyncStatus('error', 'Save failed');
+    alert('Failed to save. Check your connection.\n' + err.message);
+  } finally {
+    hideLoading();
+  }
+
+  updateStats();
+  renderCards();
+  populateCountryFilter();
+  if (currentTab === 'calendar') renderCalendar();
+}
+
+async function deleteVisit(id) {
+  if (!confirm('Delete this visit record?')) return;
+  setSyncStatus('loading', 'Deleting...');
+  showLoading('Deleting from Google Sheets...');
+  try {
+    await apiDelete(id);
+    visits = visits.filter(v => v.id !== id);
+    setSyncStatus('ok', 'Synced');
+  } catch (err) {
+    setSyncStatus('error', 'Delete failed');
+    alert('Failed to delete.\n' + err.message);
+  } finally {
+    hideLoading();
+  }
+  updateStats();
+  renderCards();
+  if (currentTab === 'calendar') renderCalendar();
+}
+
+function fmtDate(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+function fmtShort(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function toDateStr(d) { return d.toISOString().slice(0,10); }
+function daysDiff(a, b) { return Math.round((b - a) / 86400000); }
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escAttr(str) { return String(str || '').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

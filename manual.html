@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agency Visit Manager — Staff Manual</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+  }
+
+  /* Cover */
+  .cover {
+    background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
+    color: white;
+    padding: 60px 40px;
+    text-align: center;
+  }
+
+  .cover .emoji { font-size: 56px; margin-bottom: 16px; }
+  .cover h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .cover .subtitle { font-size: 16px; opacity: 0.85; margin-bottom: 24px; }
+  .cover .meta {
+    display: inline-flex;
+    gap: 24px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 13px;
+  }
+  .cover .meta span { display: flex; align-items: center; gap: 6px; }
+
+  /* Content */
+  .content { max-width: 740px; margin: 0 auto; padding: 40px 24px 60px; }
+
+  /* TOC */
+  .toc {
+    background: white;
+    border-radius: 16px;
+    padding: 24px 28px;
+    margin-bottom: 36px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+  }
+
+  .toc h2 { font-size: 14px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin-bottom: 6px; }
+  .toc a { color: #2563eb; text-decoration: none; font-size: 14px; font-weight: 500; }
+  .toc a:hover { text-decoration: underline; }
+
+  /* Section */
+  .section {
+    background: white;
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+
+  .step-num {
+    background: #2563eb;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .section h2 { font-size: 19px; font-weight: 700; color: #1e293b; }
+
+  .section p { font-size: 14px; color: #334155; margin-bottom: 12px; }
+  .section p:last-child { margin-bottom: 0; }
+
+  /* Steps */
+  .steps { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+
+  .step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .step .n {
+    background: #2563eb;
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step .text { font-size: 14px; color: #1e293b; }
+  .step .text strong { color: #2563eb; }
+
+  /* Info box */
+  .info-box {
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13px;
+    margin: 14px 0;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .info-box.blue { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+  .info-box.green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+  .info-box.yellow { background: #fefce8; border: 1px solid #fde68a; color: #92400e; }
+  .info-box.red { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+  .info-box .icon { font-size: 16px; flex-shrink: 0; }
+  .info-box .body { line-height: 1.5; }
+  .info-box strong { display: block; font-weight: 700; margin-bottom: 2px; }
+
+  /* Code / URL */
+  .url-box {
+    background: #1e293b;
+    color: #7dd3fc;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: monospace;
+    font-size: 14px;
+    margin: 14px 0;
+    word-break: break-all;
+    letter-spacing: 0.2px;
+  }
+
+  code {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 5px;
+    padding: 2px 7px;
+    font-size: 13px;
+    font-family: monospace;
+    color: #0f172a;
+  }
+
+  /* Role table */
+  .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 14px 0; }
+
+  .role-card {
+    border-radius: 12px;
+    padding: 16px;
+    border: 2px solid;
+  }
+
+  .role-card.editor { border-color: #22c55e; background: #f0fdf4; }
+  .role-card.viewer { border-color: #94a3b8; background: #f8fafc; }
+
+  .role-card .role-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+
+  .role-card.editor .role-title { color: #16a34a; }
+  .role-card.viewer .role-title { color: #64748b; }
+
+  .perm-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .perm-list li { font-size: 13px; display: flex; gap: 7px; align-items: center; }
+  .perm-list li .ok { color: #16a34a; font-weight: 700; }
+  .perm-list li .no { color: #dc2626; font-weight: 700; }
+
+  /* Field table */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  th {
+    background: #f1f5f9;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    color: #475569;
+    border-bottom: 2px solid #e2e8f0;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; color: #334155; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .badge-eg {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #eff6ff;
+    color: #2563eb;
+    margin-top: 2px;
+  }
+
+  /* Badge legend */
+  .badge-legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .bl-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .bl-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* FAQ */
+  .faq-item { margin-bottom: 16px; }
+  .faq-q { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 5px; display: flex; gap: 8px; }
+  .faq-q::before { content: 'Q.'; color: #2563eb; font-weight: 800; flex-shrink: 0; }
+  .faq-a { font-size: 14px; color: #475569; padding-left: 26px; }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .cover { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section { break-inside: avoid; box-shadow: none; }
+  }
+
+  @media (max-width: 540px) {
+    .role-cards { grid-template-columns: 1fr; }
+    .cover { padding: 40px 20px; }
+    .section { padding: 20px; }
+  }
+
+  .divider { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+
+  .contact-box {
+    background: linear-gradient(135deg, #1e40af, #0ea5e9);
+    color: white;
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    margin-top: 8px;
+  }
+  .contact-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .contact-box p { font-size: 13px; opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <div class="emoji">✈️</div>
+  <h1>Agency Visit Manager</h1>
+  <div class="subtitle">Staff User Manual — First-Time Setup & Daily Use</div>
+  <div class="meta">
+    <span>📅 2026</span>
+    <span>🌐 English</span>
+    <span>👥 All Staff</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#s1">Accessing the App</a></li>
+      <li><a href="#s2">First-Time Setup (One time only)</a></li>
+      <li><a href="#s3">Signing In with Your PIN</a></li>
+      <li><a href="#s4">Understanding the Dashboard</a></li>
+      <li><a href="#s5">Adding a New Visit (Editors only)</a></li>
+      <li><a href="#s6">Editing or Deleting a Visit (Editors only)</a></li>
+      <li><a href="#s7">Using the Calendar View</a></li>
+      <li><a href="#s8">Frequently Asked Questions</a></li>
+    </ol>
+  </div>
+
+  <!-- Section 1 -->
+  <div class="section" id="s1">
+    <div class="section-header">
+      <div class="step-num">1</div>
+      <h2>Accessing the App</h2>
+    </div>
+
+    <p>The app runs in your web browser — no installation needed. Open the link below on any device (phone, tablet, or computer).</p>
+
+    <div class="url-box">https://bh007007.github.io/agency-visit-manager</div>
+
+    <div class="info-box blue">
+      <span class="icon">💡</span>
+      <div class="body">
+        <strong>Tip — Save it to your home screen</strong>
+        On iPhone: tap the Share icon → "Add to Home Screen"<br>
+        On Android: tap the browser menu → "Add to Home Screen"<br>
+        It will look and feel like an app on your phone.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <div class="section" id="s2">
+    <div class="section-header">
+      <div class="step-num">2</div>
+      <h2>First-Time Setup <span style="font-size:14px;font-weight:500;color:#64748b;">(One time only)</span></h2>
+    </div>
+
+    <p>The very first time you open the app, a yellow banner will appear at the top asking for the database URL. You only need to do this once per device.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <div class="text">You will see a yellow banner: <strong>"⚙️ First-time Setup: Paste your Google Apps Script Web App URL..."</strong></div>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <div class="text">Ask your manager for the <strong>API URL</strong>. It looks like:<br>
+          <code>https://script.google.com/macros/s/XXXXX/exec</code>
+        </div>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <div class="text">Paste the URL into the input field and click <strong>Connect</strong>.</div>
+      </div>
+      <div class="step">
+        <div class="n">4</div>
+        <div class="text">The banner disappears and the header shows <strong>🟢 Synced</strong>. Setup is complete.</div>
+      </div>
+    </div>
+
+    <div class="info-box green">
+      <span class="icon">✅</span>
+      <div class="body">
+        <strong>This step is only required once.</strong>
+        Your browser remembers the URL automatically. Next time you open the app, it connects right away.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <div class="section" id="s3">
+    <div class="section-header">
+      <div class="step-num">3</div>
+      <h2>Signing In with Your PIN</h2>
+    </div>
+
+    <p>Every time you open the app, you will see a sign-in screen. Enter the PIN given to you by your manager.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="n">1</div>
+        <div class="text">Type your PIN in the center box and press <strong>Sign In</strong> (or press Enter).</div>
+      </div>
+      <div class="step">
+        <div class="n">2</div>
+        <div class="text">If the PIN is correct, the dashboard loads immediately.</div>
+      </div>
+      <div class="step">
+        <div class="n">3</div>
+        <div class="text">If you see <strong>"Incorrect PIN"</strong>, check that Caps Lock is off and try again.</div>
+      </div>
+    </div>
+
+    <hr class="divider">
+    <p><strong>Two types of accounts:</strong></p>
+
+    <div class="role-cards">
+      <div class="role-card editor">
+        <div class="role-title">✏️ Editor</div>
+        <ul class="perm-list">
+          <li><span class="ok">✓</span> View all visits</li>
+          <li><span class="ok">✓</span> Add new visits</li>
+          <li><span class="ok">✓</span> Edit existing visits</li>
+          <li><span class="ok">✓</span> Delete visits</li>
+        </ul>
+      </div>
+      <div class="role-card viewer">
+        <div class="role-title">👁 Viewer</div>
+        <ul class="perm-list">
+          <li><span class="ok">✓</span> View all visits</li>
+          <li><span class="no">✗</span> Add new visits</li>
+          <li><span class="no">✗</span> Edit existing visits</li>
+          <li><span class="no">✗</span> Delete visits</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="info-box yellow">
+      <span class="icon">🔒</span>
+      <div class="body">
+        <strong>Keep your PIN private.</strong>
+        Do not share your PIN with others. If you think your PIN has been compromised, contact your manager immediately.
+      </div>
+    </div>
+
+    <p style="margin-top:12px">To sign out, click the <strong>Sign Out</strong> button in the top-right corner of the header. Your session ends automatically when you close the browser tab.</p>
+  </div>
+
+  <!-- Section 4 -->
+  <div class="section" id="s4">
+    <div class="section-header">
+      <div class="step-num">4</div>
+      <h2>Understanding the Dashboard</h2>
+    </div>
+
+    <p>After signing in, you will see the main dashboard. Here is what each part does.</p>
+
+    <table>
+      <tr>
+        <th>Area</th>
+        <th>What it shows</th>
+      </tr>
+      <tr>
+        <td><strong>Stats Bar</strong><br>(4 numbers at the top)</td>
+        <td>
+          <strong>Total Visits</strong> — all records<br>
+          <strong>Upcoming</strong> — visits that have not started yet<br>
+          <strong>Pickup Required</strong> — guests who need airport pickup<br>
+          <strong>This Month</strong> — visits arriving this month
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Search &amp; Filters</strong></td>
+        <td>Type a name, agency, or country to search. Use the dropdowns to filter by campus, country, or pickup requirement.</td>
+      </tr>
+      <tr>
+        <td><strong>Visit Cards</strong></td>
+        <td>Each card is one visit. Cards are sorted by arrival date (soonest first).</td>
+      </tr>
+      <tr>
+        <td><strong>📋 List / 📅 Calendar tabs</strong></td>
+        <td>Switch between card view and a monthly calendar view.</td>
+      </tr>
+    </table>
+
+    <p><strong>Badge colors on each card:</strong></p>
+    <div class="badge-legend">
+      <div class="bl-item"><span class="bl-badge" style="background:#eff6ff;color:#2563eb">Premium</span> Campus</div>
+      <div class="bl-item"><span class="bl-badge" style="background:#fef3c7;color:#92400e">🚗 Pickup</span> Pickup needed</div>
+      <div class="bl-item"><span class="bl-badge" style="background:#f0fdf4;color:#166534">🏨 Stay</span> Accommodation</div>
+      <div class="bl-item"><span class="bl-badge" style="background:#fce7f3;color:#9d174d">🎥 Recording</span> Video recording</div>
+    </div>
+
+    <p><strong>Status indicators:</strong></p>
+    <div class="steps">
+      <div class="step">
+        <div class="n" style="background:#22c55e">●</div>
+        <div class="text"><strong>In Progress</strong> — the guest is currently on campus (today is within their visit dates)</div>
+      </div>
+      <div class="step">
+        <div class="n" style="background:#2563eb;font-size:10px">D-7</div>
+        <div class="text"><strong>D-countdown</strong> — how many days until the visit starts</div>
+      </div>
+      <div class="step">
+        <div class="n" style="background:#94a3b8;font-size:9px">END</div>
+        <div class="text"><strong>Completed</strong> — the visit has already ended</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <div class="section" id="s5">
+    <div class="section-header">
+      <div class="step-num">5</div>
+      <h2>Adding a New Visit <span style="font-size:13px;color:#16a34a;font-weight:600;">Editors only</span></h2>
+    </div>
+
+    <p>Click the <strong>+ New Visit</strong> button in the top-right corner. A form will slide open.</p>
+
+    <table>
+      <tr><th>Field</th><th>What to enter</th><th>Example</th></tr>
+      <tr>
+        <td><strong>Agency / Group Name</strong></td>
+        <td>Name of the agency or group</td>
+        <td><span class="badge-eg">studyhere (PECA group)</span></td>
+      </tr>
+      <tr>
+        <td><strong>Country Code</strong></td>
+        <td>3-letter country code</td>
+        <td><span class="badge-eg">TWN</span> <span class="badge-eg">KOR</span> <span class="badge-eg">JPN</span></td>
+      </tr>
+      <tr>
+        <td><strong>Gender / Pax</strong></td>
+        <td>Gender and number of guests</td>
+        <td><span class="badge-eg">M *1</span> <span class="badge-eg">F *2</span> <span class="badge-eg">Mixed *4</span></td>
+      </tr>
+      <tr>
+        <td><strong>Guest Name</strong></td>
+        <td>Full name of the guest or group leader</td>
+        <td><span class="badge-eg">Kelvin</span></td>
+      </tr>
+      <tr>
+        <td><strong>Arrival / Departure Date</strong></td>
+        <td>Select from the date picker</td>
+        <td><span class="badge-eg">Apr 19 – Apr 25</span></td>
+      </tr>
+      <tr>
+        <td><strong>Campus</strong></td>
+        <td>Check all campuses they will visit</td>
+        <td>Premium, Challenger, JIC</td>
+      </tr>
+      <tr>
+        <td><strong>Special Requirements</strong></td>
+        <td>Check all that apply</td>
+        <td>🚗 Pickup, 🏨 Accommodation, 🎥 Recording</td>
+      </tr>
+      <tr>
+        <td><strong>Pickup / Stay Notes</strong></td>
+        <td>Details about pickup or accommodation</td>
+        <td><span class="badge-eg">Stay in JIC a week</span> <span class="badge-eg">Airport pickup 14:00</span></td>
+      </tr>
+      <tr>
+        <td><strong>Visit Schedule</strong></td>
+        <td>Add each scheduled appointment with date, time, and description. Click <strong>+ Add Schedule Item</strong> for more rows.</td>
+        <td><span class="badge-eg">Apr 20 09:00 — JIC Premium orientation</span></td>
+      </tr>
+      <tr>
+        <td><strong>Notes</strong></td>
+        <td>Any other notes for the team</td>
+        <td><span class="badge-eg">VIP guest, needs translator</span></td>
+      </tr>
+    </table>
+
+    <p>When finished, click <strong>Save</strong>. The record is saved to the shared Google Sheet instantly — all staff will see it right away.</p>
+
+    <div class="info-box green">
+      <span class="icon">✅</span>
+      <div class="body">
+        <strong>Auto-sync</strong>
+        When you save, the header shows <strong>🟢 Saved</strong>. Other staff will see the new visit the next time they refresh the page.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6 -->
+  <div class="section" id="s6">
+    <div class="section-header">
+      <div class="step-num">6</div>
+      <h2>Editing or Deleting a Visit <span style="font-size:13px;color:#16a34a;font-weight:600;">Editors only</span></h2>
+    </div>
+
+    <p><strong>To edit:</strong> Find the visit card and click the <strong>✏️ Edit</strong> button. The same form opens with all existing information pre-filled. Make your changes and click <strong>Save</strong>.</p>
+
+    <p><strong>To delete:</strong> Click the <strong>Delete</strong> button on the card. A confirmation popup will appear — click <strong>OK</strong> to confirm. This cannot be undone.</p>
+
+    <div class="info-box red">
+      <span class="icon">⚠️</span>
+      <div class="body">
+        <strong>Deletion is permanent.</strong>
+        Once deleted, the record is removed from Google Sheets immediately. Always double-check before deleting.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7 -->
+  <div class="section" id="s7">
+    <div class="section-header">
+      <div class="step-num">7</div>
+      <h2>Using the Calendar View</h2>
+    </div>
+
+    <p>Click the <strong>📅 Calendar</strong> tab to switch to the monthly calendar. It shows all visits and scheduled appointments on their dates.</p>
+
+    <table>
+      <tr><th>Color</th><th>Meaning</th></tr>
+      <tr><td><span style="display:inline-block;background:#2563eb;color:white;padding:2px 8px;border-radius:4px;font-size:12px;">Blue</span></td><td>Guest is staying on campus (within arrival–departure range)</td></tr>
+      <tr><td><span style="display:inline-block;background:#f59e0b;color:white;padding:2px 8px;border-radius:4px;font-size:12px;">Orange</span></td><td>Pickup required on this date</td></tr>
+      <tr><td><span style="display:inline-block;background:#22c55e;color:white;padding:2px 8px;border-radius:4px;font-size:12px;">Green</span></td><td>A specific scheduled appointment (visit schedule item)</td></tr>
+    </table>
+
+    <p>Click any event on the calendar to open that visit's edit form.</p>
+    <p>Use the <strong>‹ Prev</strong> and <strong>Next ›</strong> buttons to move between months.</p>
+  </div>
+
+  <!-- Section 8 -->
+  <div class="section" id="s8">
+    <div class="section-header">
+      <div class="step-num">8</div>
+      <h2>Frequently Asked Questions</h2>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">The app says "Connection failed" — what do I do?</div>
+      <div class="faq-a">Check your internet connection and refresh the page. If the problem continues, contact your manager to verify the API URL is still active.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">I don't see the Edit / Delete buttons on the cards.</div>
+      <div class="faq-a">You have a <strong>Viewer</strong> account. Viewer accounts can only read data. If you need to make changes, ask your manager to give you an Editor PIN.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">How do I see the latest data added by another staff member?</div>
+      <div class="faq-a">Simply refresh the page (F5 or pull-to-refresh on mobile). The app loads the latest data from Google Sheets each time you sign in or refresh.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">My PIN stopped working.</div>
+      <div class="faq-a">PINs can be changed by the manager at any time. Contact your manager to get your updated PIN.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Can I use this on my phone?</div>
+      <div class="faq-a">Yes. Open the URL in your phone's browser (Chrome or Safari). For faster access, save it to your home screen — it will open like a regular app.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Is the data safe?</div>
+      <div class="faq-a">All data is stored in a private Google Sheet owned by your organization. Access requires a PIN. Never share your PIN or the API URL outside the team.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">The yellow setup banner appeared again on a different device.</div>
+      <div class="faq-a">Each device/browser needs to be set up once. Paste the API URL again and click Connect. This only takes about 10 seconds.</div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="contact-box">
+      <h3>Need help?</h3>
+      <p>Contact your manager or the person who set up this system for assistance.</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
